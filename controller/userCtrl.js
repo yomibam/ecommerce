@@ -54,9 +54,8 @@ const loginUserCtrl = asyncHandler(async (req, res) => {
 
 const handleRefreshToken = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
-  if (!cookie?.refreshToken) {
-    throw new Error("No Refresh Token in cookies");
-  }
+  if (!cookie?.refreshToken) throw new Error("No Refresh Token in cookies");
+
   const refreshToken = cookie.refreshToken;
   const user = await User.findOne({ refreshToken });
   if (!user) {
@@ -75,24 +74,31 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
 
 const logout = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
-  if (!cookie?.refreshToken) {
-    throw new Error("No Refresh Token in cookies");
-  }
+  if (!cookie?.refreshToken) throw new Error("No Refresh Token in cookies");
+
   const refreshToken = cookie.refreshToken;
+
+  // Find the user with the matching refresh token
   const user = await User.findOne({ refreshToken });
   if (!user) {
+    // Clear the cookie and send 204 status if no user found
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: true,
     });
-    return res.sendStatus(204); // Forbidden
+    return res.sendStatus(204); // No Content
   }
-  await User.findByIdAndUpdate(refreshToken, { refreshToken: "" });
+
+  // Update the user's refresh token to an empty string
+  await User.findOneAndUpdate({ refreshToken }, { refreshToken: "" });
+
+  // Clear the refresh token cookie
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: true,
   });
-  return res.sendStatus(204); // Forbidden
+
+  return res.sendStatus(204); // No Content
 });
 
 // Update a user
